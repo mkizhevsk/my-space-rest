@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.mk</groupId>
 	<artifactId>my-space-rest</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<name>my-space-rest</name>
 	<description>My-space rest</description>
 	<properties>
