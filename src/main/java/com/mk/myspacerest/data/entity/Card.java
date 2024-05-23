@@ -1,7 +1,8 @@
 package com.mk.myspacerest.data.entity;
 
+import jakarta.persistence.*;
 import lombok.*;
-import javax.persistence.*;
+
 import java.time.LocalDateTime;
 
 @Getter
@@ -14,8 +15,8 @@ import java.time.LocalDateTime;
 public class Card {
 
     @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
-    private  int id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
 
     /**
      * Уникальный код для синхронизации
@@ -26,7 +27,6 @@ public class Card {
     /**
      * Дата и время редактирования
      */
-    //@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSSZ")
     @Column(name = "edit_date_time")
     private LocalDateTime editDateTime;
 
