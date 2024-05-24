@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,7 +21,13 @@ public class CardController {
 
     private final Logger logger = LoggerFactory.getLogger(CardController.class);
 
-    @GetMapping("/customers/{cardId}")
+    @GetMapping("/cards")
+    public ResponseEntity<List<CardDTO>> getCards() {
+        var cards = cardService.getCards();
+        return ResponseEntity.ok(cards);
+    }
+
+    @GetMapping("/cards/{cardId}")
     public Card getCard(@PathVariable int cardId, Principal principal) {
         logger.debug("Start - getCard: cardId = {}, principal = {} ", cardId, principal);
         var card = cardService.getCard(cardId);
@@ -28,7 +35,7 @@ public class CardController {
         return card;
     }
 
-    @PostMapping("/customers")
+    @PostMapping("/cards")
     public ResponseEntity<Card> createCard(@RequestBody Card card, Principal principal) {
         logger.debug("Start - createCard: principal = {} ", principal);
         var createdCard = cardService.createCard(card);
@@ -36,9 +43,9 @@ public class CardController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdCard);
     }
 
-    @PutMapping("/customers/{internalCode}")
+    @PutMapping("/cards/{internalCode}")
     public ResponseEntity<Card> updateCard(@PathVariable String internalCode, @RequestBody CardDTO cardDTO) {
-        Card updatedCard = cardService.updateCard(internalCode, cardDTO);
+        var updatedCard = cardService.updateCard(internalCode, cardDTO);
         if (updatedCard != null) {
             return ResponseEntity.ok(updatedCard);
         } else {

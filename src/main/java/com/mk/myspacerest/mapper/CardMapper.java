@@ -5,10 +5,13 @@ import com.mk.myspacerest.data.entity.Card;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface CardMapper {
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "internalCode", ignore = true)
     Card toCard(CardDTO cardDTO);
+
+    List<CardDTO> toCardDTOs(List<Card> cards);
 }

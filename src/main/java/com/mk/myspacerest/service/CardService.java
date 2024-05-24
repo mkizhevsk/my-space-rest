@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -24,10 +23,9 @@ public class CardService {
 
     private final Logger logger = LoggerFactory.getLogger(CardService.class);
 
-    public List<Card> getCards() {
-        var customers = new ArrayList<Card>();
-        cardRepository.findAll().forEach(customers::add);
-        return customers;
+    public List<CardDTO> getCards() {
+        var cards = (List<Card>) cardRepository.findAll();
+        return cardMapper.toCardDTOs(cards);
     }
 
     @Transactional
@@ -40,11 +38,11 @@ public class CardService {
     }
 
     @Transactional
-    public Card updateCard(String internalCode, CardDTO updatedCardDTO) {
+    public Card updateCard(String internalCode, CardDTO cardDTO) {
         var existingCardOptional = cardRepository.findByInternalCode(internalCode);
         if (existingCardOptional.isPresent()) {
             var existingCard = existingCardOptional.get();
-            var updatedCard = cardMapper.toCard(updatedCardDTO);
+            var updatedCard = cardMapper.toCard(cardDTO);
             updatedCard.setId(existingCard.getId());
             updatedCard.setEditDateTime(LocalDateTime.now());
             return cardRepository.save(updatedCard);
