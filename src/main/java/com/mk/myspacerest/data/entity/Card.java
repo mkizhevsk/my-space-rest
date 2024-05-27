@@ -49,4 +49,17 @@ public class Card {
      * Состояние: 0 - не выучено, 1 - выучено
      */
     private int status;
+
+    @Override
+    public String toString() {
+        return "Card{" +
+                "id=" + id +
+                ", internalCode='" + internalCode + '\'' +
+                ", editDateTime=" + editDateTime +
+                ", front='" + front + '\'' +
+                ", back='" + back + '\'' +
+                ", example='" + example + '\'' +
+                ", status=" + status +
+                '}';
+    }
 }

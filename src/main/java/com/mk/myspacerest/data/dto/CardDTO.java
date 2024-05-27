@@ -9,6 +9,7 @@ import lombok.*;
 @Builder
 public class CardDTO {
 
+    private String internalCode;
     private String front;
     private String back;
     private String example;
