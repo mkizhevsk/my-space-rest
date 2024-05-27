@@ -15,4 +15,14 @@ public class CardDTO {
     private String example;
     private int status;
 
+    @Override
+    public String toString() {
+        return "CardDTO{" +
+                "internalCode='" + internalCode + '\'' +
+                ", front='" + front + '\'' +
+                ", back='" + back + '\'' +
+                ", example='" + example + '\'' +
+                ", status=" + status +
+                '}';
+    }
 }
