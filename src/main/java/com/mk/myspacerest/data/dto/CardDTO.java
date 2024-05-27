@@ -10,6 +10,7 @@ import lombok.*;
 public class CardDTO {
 
     private String internalCode;
+    private String editDateTime;
     private String front;
     private String back;
     private String example;
@@ -19,6 +20,7 @@ public class CardDTO {
     public String toString() {
         return "CardDTO{" +
                 "internalCode='" + internalCode + '\'' +
+                ", editDateTime=" + editDateTime +
                 ", front='" + front + '\'' +
                 ", back='" + back + '\'' +
                 ", example='" + example + '\'' +
