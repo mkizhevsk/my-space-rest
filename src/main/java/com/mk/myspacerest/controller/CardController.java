@@ -53,4 +53,13 @@ public class CardController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @PostMapping("/cards/sync")
+    public ResponseEntity<List<CardDTO>> syncCards(@RequestBody List<CardDTO> cardDTOs) {
+        logger.info("Start - syncCards");
+        cardDTOs.forEach(System.out::println);
+        var syncedCards = cardService.syncCards(cardDTOs);
+        logger.info("End - syncCards: {}", syncedCards);
+        return ResponseEntity.ok(syncedCards);
+    }
 }
