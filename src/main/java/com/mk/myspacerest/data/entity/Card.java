@@ -50,6 +50,11 @@ public class Card {
      */
     private int status;
 
+    /**
+     * Признак удаления
+     */
+    private boolean deleted;
+
     @Override
     public String toString() {
         return "Card{" +
@@ -60,6 +65,7 @@ public class Card {
                 ", back='" + back + '\'' +
                 ", example='" + example + '\'' +
                 ", status=" + status +
+                ", deleted=" + deleted +
                 '}';
     }
 }

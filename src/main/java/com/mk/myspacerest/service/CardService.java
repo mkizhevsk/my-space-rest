@@ -57,11 +57,6 @@ public class CardService {
         return cardRepository.findById(cardId).orElse(null);
     }
 
-    @Transactional
-    public void deleteCard(int cardId) {
-        cardRepository.deleteById(cardId);
-    }
-
     private List<Card> getAllCards() {
         var cards = (List<Card>) cardRepository.findAll();
         return cards.stream()
@@ -70,41 +65,52 @@ public class CardService {
     }
 
     public List<CardDTO> syncCards(List<CardDTO> cardDTOs) {
-        // Create a set of received internal codes for fast lookup
-        var receivedInternalCodes = cardDTOs.stream()
-                .map(CardDTO::getInternalCode)
-                .collect(Collectors.toSet());
 
-        // Get all cards from the database
-        var allCards = getAllCards();
-        var allCardDTOs = cardMapper.toCardDTOs(allCards);
+        var resultFromMobileCards = processMobileCards(cardDTOs);
+        logger.info("updated: " + resultFromMobileCards[0] + " | created: " + resultFromMobileCards[1]);
 
-        // Find cards that are in the database but not in the received list
-        var missingOnMobile = allCardDTOs.stream()
-                .filter(cardDTO -> !receivedInternalCodes.contains(cardDTO.getInternalCode()))
-                .collect(Collectors.toList());
+        var cardsForMobile = getCardsForMobile(cardDTOs);
+        logger.info("cards for mobile: " + cardsForMobile);
 
-        // Sync the received cards (update existing or add new ones)
+        return cardsForMobile;
+    }
+
+    private int[] processMobileCards(List<CardDTO> cardDTOs) {
+        var result = new int[] { 0, 0};
         for (var cardDTO : cardDTOs) {
             var existingCard = cardRepository.findByInternalCode(cardDTO.getInternalCode());
             if (existingCard.isPresent()) {
                 var card = existingCard.get();
                 var cardDTOEditDateTime = DateUtils.parseStringToLocalDateTime(cardDTO.getEditDateTime());
 
-                // Check if the mobile card's editDateTime is newer than the web card's editDateTime
                 if (cardDTOEditDateTime.isAfter(card.getEditDateTime())) {
                     cardMapper.updateCard(cardDTO, card);
                     card.setEditDateTime(cardDTOEditDateTime);
+                    card.setDeleted(false);
                     cardRepository.save(card);
+                    result[0]++;
                 }
             } else {
                 var newCard = cardMapper.toCard(cardDTO);
-                newCard.setEditDateTime(LocalDateTime.now());
                 cardRepository.save(newCard);
+                result[1]++;
             }
         }
+        return result;
+    }
 
-        return missingOnMobile;
+    private List<CardDTO> getCardsForMobile(List<CardDTO> cardDTOs) {
+
+        var receivedInternalCodes = cardDTOs.stream()
+                .map(CardDTO::getInternalCode)
+                .collect(Collectors.toSet());
+
+        var allCards = getAllCards();
+        var allCardDTOs = cardMapper.toCardDTOs(allCards);
+
+        return allCardDTOs.stream()
+                .filter(cardDTO -> !receivedInternalCodes.contains(cardDTO.getInternalCode()) || cardDTO.isDeleted())
+                .collect(Collectors.toList());
     }
 
 }

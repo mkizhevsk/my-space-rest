@@ -15,16 +15,18 @@ public class CardDTO {
     private String back;
     private String example;
     private int status;
+    private boolean deleted;
 
     @Override
     public String toString() {
         return "CardDTO{" +
                 "internalCode='" + internalCode + '\'' +
-                ", editDateTime=" + editDateTime +
+                ", editDateTime='" + editDateTime + '\'' +
                 ", front='" + front + '\'' +
                 ", back='" + back + '\'' +
                 ", example='" + example + '\'' +
                 ", status=" + status +
+                ", deleted=" + deleted +
                 '}';
     }
 }
