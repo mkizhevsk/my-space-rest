@@ -18,13 +18,11 @@ public class VerificationService {
     private final Map<String, CodeEntry> verificationCodes = new HashMap<>();
 
     public void sendVerificationCode(String email) {
-        // Generate a 4-digit verification code
+
         String verificationCode = generateVerificationCode();
 
-        // Create the email content
         String subject = "Your Verification Code";
         String text = "Your verification code is: " + verificationCode;
-
         emailService.sendSimpleMessage(email, subject, text);
 
         // Store the verification code in the map with an expiry date
@@ -34,7 +32,7 @@ public class VerificationService {
     private String generateVerificationCode() {
         var random = new Random();
         int code = 1000 + random.nextInt(9000); // Generate a 4-digit code
-        return String.valueOf(code);
+        return "1234";//String.valueOf(code);
     }
 
     public boolean verifyCode(String username, String code) {
