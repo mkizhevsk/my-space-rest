@@ -19,6 +19,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
     private final UserRepository userRepository;
 
+    private final String appUsername = "dvega4";
     private final String appPassword = "password";
 
     @Override
@@ -28,16 +29,16 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         var password = authentication.getCredentials().toString();
         System.out.println(username + " " + password);
 
-        if (basicAuthenticationIsValid(username, password)) { // Simplified for illustration
+        if (basicAuthenticationIsValid(username, password)) {
             List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("read"));
-            return new UsernamePasswordAuthenticationToken("dvega4", "{noop}" + appPassword, authorities);
+            return new UsernamePasswordAuthenticationToken(username, "{noop}" + appPassword, authorities);
         } else {
             throw new AuthenticationException("Invalid username or password") {};
         }
     }
 
     private boolean basicAuthenticationIsValid(String username, String password) {
-        boolean userNameIsValid = true;
+        boolean userNameIsValid = username.equals(appUsername);
         boolean passwordIsValid = password.equals(appPassword);
         return userNameIsValid && passwordIsValid;
     }

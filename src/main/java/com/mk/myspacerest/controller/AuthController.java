@@ -25,6 +25,7 @@ public class AuthController {
 
     @PostMapping("/request-code")
     public Map<String, String> requestCode(@RequestParam String username) {
+        LOG.info("Start requestCode username: {}", username);
         verificationService.sendVerificationCode(username);
 
         Map<String, String> response = new HashMap<>();
