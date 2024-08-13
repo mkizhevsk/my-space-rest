@@ -41,10 +41,10 @@ public class AuthController {
             String accessToken = tokenService.generateAccessToken(authentication);
             String refreshToken = tokenService.generateRefreshToken(authentication);
 
-            Map<String, String> tokens = new HashMap<>();
+            var tokens = new HashMap<String, String>();
             tokens.put("accessToken", accessToken);
             tokens.put("refreshToken", refreshToken);
-
+            LOG.info("Tokens created {}", tokens);
             return tokens;
         } else {
             throw new RuntimeException("Invalid or expired verification code.");
