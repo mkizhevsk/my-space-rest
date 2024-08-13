@@ -1,10 +1,13 @@
 package com.mk.myspacerest.controller;
 
+import com.mk.myspacerest.constants.ErrorCodes;
+import com.mk.myspacerest.data.security.verification.VerificationService;
+import com.mk.myspacerest.exception.ErrorResponse;
 import com.mk.myspacerest.service.TokenService;
-import com.mk.myspacerest.service.VerificationService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -34,9 +37,12 @@ public class AuthController {
     }
 
     @PostMapping("/process-code")
-    public Map<String, String> processCode(@RequestParam String username, @RequestParam String code) {
+    public ResponseEntity<?>  processCode(@RequestParam String username, @RequestParam String code) {
         LOG.info("Start processCode username: {}, code: {}", username, code);
-        if (verificationService.verifyCode(username, code)) {
+
+        var verificationResult = verificationService.verifyCode(username, code);
+
+        if (verificationResult.isSuccessful()) {
             Authentication authentication = new UsernamePasswordAuthenticationToken(username, null);
             String accessToken = tokenService.generateAccessToken(authentication);
             String refreshToken = tokenService.generateRefreshToken(authentication);
@@ -45,9 +51,20 @@ public class AuthController {
             tokens.put("accessToken", accessToken);
             tokens.put("refreshToken", refreshToken);
             LOG.info("Tokens created {}", tokens);
-            return tokens;
+            return ResponseEntity.ok(tokens);
         } else {
-            throw new RuntimeException("Invalid or expired verification code.");
+            ErrorResponse errorResponse;
+
+            if (verificationResult.isCodeInvalid()) {
+                errorResponse = new ErrorResponse(ErrorCodes.INVALID_CODE, "The verification code you entered is invalid.");
+                return ResponseEntity.badRequest().body(errorResponse);
+            } else if (verificationResult.isCodeExpired()) {
+                errorResponse = new ErrorResponse(ErrorCodes.EXPIRED_CODE, "The verification code has expired.");
+                return ResponseEntity.badRequest().body(errorResponse);
+            } else {
+                errorResponse = new ErrorResponse(ErrorCodes.UNKNOWN_ERROR, "An unknown error occurred.");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
         }
     }
 
