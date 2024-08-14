@@ -1,5 +1,6 @@
-package com.mk.myspacerest.service;
+package com.mk.myspacerest.data.security.verification;
 
+import com.mk.myspacerest.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -35,15 +36,24 @@ public class VerificationService {
         return "1234";//String.valueOf(code);
     }
 
-    public boolean verifyCode(String username, String code) {
+    public VerificationResult verifyCode(String username, String code) {
         verificationCodes.forEach((key, value) -> {
             System.out.println("Key: " + key + ", Value: " + value);
         });
+
         var entry = verificationCodes.get(username);
-        if (entry != null && entry.getCode().equals(code) && !entry.getTimestamp().isBefore(LocalDateTime.now().minusMinutes(10))) {
-            return true;
+
+        if (entry == null) {
+            return VerificationResult.invalidCode();
+        } else if (entry.getCode().equals(code)) {
+            if (!entry.getTimestamp().isBefore(LocalDateTime.now().minusMinutes(10))) {
+                return VerificationResult.success();
+            } else {
+                return VerificationResult.expiredCode();
+            }
         }
-        return false;
+
+        return VerificationResult.invalidCode(); // No matching code found
     }
 
     // Scheduled task to clean up old codes
