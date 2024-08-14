@@ -1,12 +1,12 @@
 package com.mk.myspacerest.controller;
 
-import com.mk.myspacerest.constants.ErrorCodes;
+import com.mk.myspacerest.config.CustomHttpStatus;
 import com.mk.myspacerest.data.security.verification.VerificationService;
-import com.mk.myspacerest.exception.ErrorResponse;
 import com.mk.myspacerest.service.TokenService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -53,18 +53,21 @@ public class AuthController {
             LOG.info("Tokens created {}", tokens);
             return ResponseEntity.ok(tokens);
         } else {
-            ErrorResponse errorResponse;
+            String errorMessage;
+            int statusCode;
 
             if (verificationResult.isCodeInvalid()) {
-                errorResponse = new ErrorResponse(ErrorCodes.INVALID_CODE, "The verification code you entered is invalid.");
-                return ResponseEntity.badRequest().body(errorResponse);
+                errorMessage = "The verification code you entered is invalid.";
+                statusCode = CustomHttpStatus.INVALID_CODE;
             } else if (verificationResult.isCodeExpired()) {
-                errorResponse = new ErrorResponse(ErrorCodes.EXPIRED_CODE, "The verification code has expired.");
-                return ResponseEntity.badRequest().body(errorResponse);
+                errorMessage = "The verification code has expired.";
+                statusCode = CustomHttpStatus.EXPIRED_CODE;
             } else {
-                errorResponse = new ErrorResponse(ErrorCodes.UNKNOWN_ERROR, "An unknown error occurred.");
-                return ResponseEntity.badRequest().body(errorResponse);
+                errorMessage = "An unknown error occurred.";
+                statusCode = HttpStatus.BAD_REQUEST.value();
             }
+
+            return ResponseEntity.status(statusCode).body(errorMessage);
         }
     }
 
