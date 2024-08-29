@@ -2,6 +2,7 @@ package com.mk.myspacerest.data.security;
 
 import com.mk.myspacerest.data.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -19,8 +20,11 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
     private final UserRepository userRepository;
 
-    private final String appUsername = "dvega4";
-    private final String appPassword = "password";
+    @Value("${api.login}")
+    private String apiLogin;
+
+    @Value("${api.password}")
+    private String apiPassword;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -31,15 +35,15 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
 
         if (basicAuthenticationIsValid(username, password)) {
             List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("read"));
-            return new UsernamePasswordAuthenticationToken(username, "{noop}" + appPassword, authorities);
+            return new UsernamePasswordAuthenticationToken(username, "{noop}" + apiPassword, authorities);
         } else {
             throw new AuthenticationException("Invalid username or password") {};
         }
     }
 
     private boolean basicAuthenticationIsValid(String username, String password) {
-        boolean userNameIsValid = username.equals(appUsername);
-        boolean passwordIsValid = password.equals(appPassword);
+        boolean userNameIsValid = username.equals(apiLogin);
+        boolean passwordIsValid = password.equals(apiPassword);
         return userNameIsValid && passwordIsValid;
     }
 

@@ -33,7 +33,7 @@ public class VerificationService {
     private String generateVerificationCode() {
         var random = new Random();
         int code = 1000 + random.nextInt(9000); // Generate a 4-digit code
-        return "1234";//String.valueOf(code);
+        return String.valueOf(code);
     }
 
     public VerificationResult verifyCode(String username, String code) {
