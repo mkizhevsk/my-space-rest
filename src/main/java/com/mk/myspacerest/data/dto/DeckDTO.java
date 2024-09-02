@@ -16,4 +16,15 @@ public class DeckDTO {
     private String editDateTime;
     private List<CardDTO> cards;
     private boolean deleted;
+
+    @Override
+    public String toString() {
+        return "DeckDTO{" +
+                "name='" + name + '\'' +
+                ", internalCode='" + internalCode + '\'' +
+                ", editDateTime='" + editDateTime + '\'' +
+                ", cards=" + cards.size() +
+                ", deleted=" + deleted +
+                '}';
+    }
 }

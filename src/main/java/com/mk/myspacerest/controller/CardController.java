@@ -35,7 +35,8 @@ public class CardController {
         logger.info("Start - syncDecks");
         deckDTOs.forEach(System.out::println);
         var syncedDecks = cardService.syncCards(deckDTOs, principal.getName());
-        logger.info("End - syncCards: {}", syncedDecks);
+        syncedDecks.forEach(System.out::println);
+        logger.info("End - syncCards: {}", syncedDecks.size());
         return ResponseEntity.ok(syncedDecks);
     }
 
