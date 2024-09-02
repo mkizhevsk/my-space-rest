@@ -3,8 +3,10 @@ package com.mk.myspacerest.service;
 import com.mk.myspacerest.data.dto.CardDTO;
 import com.mk.myspacerest.data.dto.DeckDTO;
 import com.mk.myspacerest.data.entity.Card;
+import com.mk.myspacerest.data.entity.Deck;
 import com.mk.myspacerest.data.repository.CardRepository;
 import com.mk.myspacerest.data.repository.DeckRepository;
+import com.mk.myspacerest.data.repository.UserRepository;
 import com.mk.myspacerest.mapper.CardMapper;
 import com.mk.myspacerest.mapper.DeckMapper;
 import com.mk.myspacerest.utils.DateUtils;
@@ -16,8 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,12 +29,21 @@ public class CardService {
     private final CardMapper cardMapper;
     private final DeckRepository deckRepository;
     private final DeckMapper deckMapper;
+    private final UserRepository userRepository;
 
     private final Logger logger = LoggerFactory.getLogger(CardService.class);
 
-    public List<DeckDTO> getDecksByUser(String username) {
+    public List<DeckDTO> getDeckDTOsByUser(String username) {
         var decks = deckRepository.getDecksByUser(username);
         return deckMapper.toDeckDTOs(decks);
+    }
+
+    public List<Deck> getDeckByUser(String username) {
+        return deckRepository.getDecksByUser(username);
+    }
+
+    public Deck getDeckByInternalCode(String internalCode) {
+        return deckRepository.getByInternalCode(internalCode);
     }
 
     public List<CardDTO> getCards() {
@@ -67,60 +78,94 @@ public class CardService {
         return cardRepository.findById(cardId).orElse(null);
     }
 
-    private List<Card> getAllCards() {
-        var cards = (List<Card>) cardRepository.findAll();
-        return cards.stream()
-                .filter(card -> card.getInternalCode() != null && !card.getInternalCode().isEmpty())
-                .collect(Collectors.toList());
+    public List<DeckDTO> syncCards(List<DeckDTO> mobileDeckDTOs, String username) {
+        logger.info("syncCards - start: mobileDeckDTOs = {}, userName = {}", mobileDeckDTOs.size(), username);
+        var deckDTOsForMobile = getDecksForMobile(mobileDeckDTOs, username);
+        logger.info("syncCards - end: deckDTOsForMobile = {}", deckDTOsForMobile.size());
+        return deckDTOsForMobile;
     }
 
-    public List<CardDTO> syncCards(List<CardDTO> cardDTOs) {
+    private List<DeckDTO> getDecksForMobile(List<DeckDTO> mobileDeckDTOs, String username) {
+        var deckDTOsForMobile = new ArrayList<DeckDTO>();
 
-        var resultFromMobileCards = processMobileCards(cardDTOs);
-        logger.info("updated: " + resultFromMobileCards[0] + " | created: " + resultFromMobileCards[1]);
+        for (var mobileDeckDTO : mobileDeckDTOs) {
+            // process deck
+            processMobileDeckDTO(mobileDeckDTO, username);
 
-        var cardsForMobile = getCardsForMobile(cardDTOs);
-        logger.info("cards for mobile: " + cardsForMobile);
+            // process cards in the deck
+            var cards = getCardsForMobile(mobileDeckDTO.getCards());
+
+            //
+            var deckForMobile = getDeckByInternalCode(mobileDeckDTO.getInternalCode());
+            deckForMobile.setCards(cards);
+            var deckDTOForMobile = deckMapper.toDeckDTO(deckForMobile);
+            deckDTOsForMobile.add(deckDTOForMobile);
+        }
+
+        // find decks not present in mobile and add it to result
+
+
+        return deckDTOsForMobile;
+    }
+
+    private void processMobileDeckDTO(DeckDTO mobileDeckDTO, String username) {
+        var webDeck = deckRepository.findByInternalCode(mobileDeckDTO.getInternalCode());
+        if (webDeck.isPresent()) {
+            var deck = webDeck.get();
+            var deckDTOEditDateTime = DateUtils.parseStringToLocalDateTime(mobileDeckDTO.getEditDateTime());
+
+            if (deckDTOEditDateTime.isAfter(deck.getEditDateTime())) {
+                deckMapper.updateDeck(mobileDeckDTO, deck);
+                deckRepository.save(deck);
+            }
+        } else {
+            var newDeck = deckMapper.toDeck(mobileDeckDTO);
+            var user = userRepository.getUserByUsername(username);
+            newDeck.setUser(user);
+            deckRepository.save(newDeck);
+        }
+    }
+
+    private List<Card> getCardsForMobile(List<CardDTO> mobileCardDTOS) {
+        var cardsForMobile = new ArrayList<Card>();
+
+        for (var mobileCardDTO : mobileCardDTOS) {
+            var webCardOptional = cardRepository.findByInternalCode(mobileCardDTO.getInternalCode());
+            if (webCardOptional.isPresent()) {
+                var webCard = webCardOptional.get();
+                var mobileCardDTOEditDateTime = DateUtils.parseStringToLocalDateTime(mobileCardDTO.getEditDateTime());
+
+                if (mobileCardDTOEditDateTime.isAfter(webCard.getEditDateTime())) {
+                    cardMapper.updateCard(mobileCardDTO, webCard);
+                    webCard.setEditDateTime(mobileCardDTOEditDateTime);
+                    webCard.setDeleted(false);
+                    cardRepository.save(webCard);
+                } else {
+                    cardsForMobile.add(webCard);
+                }
+            } else {
+                var newCard = cardMapper.toCard(mobileCardDTO);
+                cardRepository.save(newCard);
+            }
+        }
 
         return cardsForMobile;
     }
 
-    private int[] processMobileCards(List<CardDTO> cardDTOs) {
-        var result = new int[] { 0, 0};
-        for (var cardDTO : cardDTOs) {
-            var existingCard = cardRepository.findByInternalCode(cardDTO.getInternalCode());
-            if (existingCard.isPresent()) {
-                var card = existingCard.get();
-                var cardDTOEditDateTime = DateUtils.parseStringToLocalDateTime(cardDTO.getEditDateTime());
 
-                if (cardDTOEditDateTime.isAfter(card.getEditDateTime())) {
-                    cardMapper.updateCard(cardDTO, card);
-                    card.setEditDateTime(cardDTOEditDateTime);
-                    card.setDeleted(false);
-                    cardRepository.save(card);
-                    result[0]++;
-                }
-            } else {
-                var newCard = cardMapper.toCard(cardDTO);
-                cardRepository.save(newCard);
-                result[1]++;
-            }
-        }
-        return result;
-    }
 
-    private List<CardDTO> getCardsForMobile(List<CardDTO> cardDTOs) {
-
-        var receivedInternalCodes = cardDTOs.stream()
-                .map(CardDTO::getInternalCode)
-                .collect(Collectors.toSet());
-
-        var allCards = getAllCards();
-        var allCardDTOs = cardMapper.toCardDTOs(allCards);
-
-        return allCardDTOs.stream()
-                .filter(cardDTO -> !receivedInternalCodes.contains(cardDTO.getInternalCode()) || cardDTO.isDeleted())
-                .collect(Collectors.toList());
-    }
+//    private List<CardDTO> getCardsForMobile(List<CardDTO> mobileCardDTOs) {
+//
+//        var receivedInternalCodes = mobileCardDTOs.stream()
+//                .map(CardDTO::getInternalCode)
+//                .collect(Collectors.toSet());
+//
+//        var allCards = getAllCards();
+//        var allCardDTOs = cardMapper.toCardDTOs(allCards);
+//
+//        return allCardDTOs.stream()
+//                .filter(cardDTO -> !receivedInternalCodes.contains(cardDTO.getInternalCode()) || cardDTO.isDeleted())
+//                .collect(Collectors.toList());
+//    }
 
 }

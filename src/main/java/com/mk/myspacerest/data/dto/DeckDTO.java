@@ -11,6 +11,7 @@ import java.util.List;
 @Builder
 public class DeckDTO {
 
+    private String name;
     private String internalCode;
     private String editDateTime;
     private List<CardDTO> cards;

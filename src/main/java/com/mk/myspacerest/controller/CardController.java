@@ -26,8 +26,17 @@ public class CardController {
     @GetMapping("/decks")
     public ResponseEntity<List<DeckDTO>> getDecks(Principal principal) {
         String username = principal.getName();
-        var cards = cardService.getDecksByUser(username);
+        var cards = cardService.getDeckDTOsByUser(username);
         return ResponseEntity.ok(cards);
+    }
+
+    @PostMapping("/decks/sync")
+    public ResponseEntity<List<DeckDTO>> syncDecks(@RequestBody List<DeckDTO> deckDTOs, Principal principal) {
+        logger.info("Start - syncDecks");
+        deckDTOs.forEach(System.out::println);
+        var syncedDecks = cardService.syncCards(deckDTOs, principal.getName());
+        logger.info("End - syncCards: {}", syncedDecks);
+        return ResponseEntity.ok(syncedDecks);
     }
 
     @GetMapping("/cards/{cardId}")
@@ -56,12 +65,5 @@ public class CardController {
         }
     }
 
-    @PostMapping("/cards/sync")
-    public ResponseEntity<List<CardDTO>> syncCards(@RequestBody List<CardDTO> cardDTOs) {
-        logger.info("Start - syncCards");
-        cardDTOs.forEach(System.out::println);
-        var syncedCards = cardService.syncCards(cardDTOs);
-        logger.info("End - syncCards: {}", syncedCards);
-        return ResponseEntity.ok(syncedCards);
-    }
+
 }
