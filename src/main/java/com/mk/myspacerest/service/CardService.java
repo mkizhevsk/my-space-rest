@@ -1,9 +1,12 @@
 package com.mk.myspacerest.service;
 
 import com.mk.myspacerest.data.dto.CardDTO;
+import com.mk.myspacerest.data.dto.DeckDTO;
 import com.mk.myspacerest.data.entity.Card;
 import com.mk.myspacerest.data.repository.CardRepository;
+import com.mk.myspacerest.data.repository.DeckRepository;
 import com.mk.myspacerest.mapper.CardMapper;
+import com.mk.myspacerest.mapper.DeckMapper;
 import com.mk.myspacerest.utils.DateUtils;
 import com.mk.myspacerest.utils.StringRandomGenerator;
 import lombok.RequiredArgsConstructor;
@@ -22,8 +25,15 @@ public class CardService {
 
     private final CardRepository cardRepository;
     private final CardMapper cardMapper;
+    private final DeckRepository deckRepository;
+    private final DeckMapper deckMapper;
 
     private final Logger logger = LoggerFactory.getLogger(CardService.class);
+
+    public List<DeckDTO> getDecksByUser(String username) {
+        var decks = deckRepository.getDecksByUser(username);
+        return deckMapper.toDeckDTOs(decks);
+    }
 
     public List<CardDTO> getCards() {
         var cards = (List<Card>) cardRepository.findAll();

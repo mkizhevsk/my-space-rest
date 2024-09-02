@@ -1,6 +1,7 @@
 package com.mk.myspacerest.controller;
 
 import com.mk.myspacerest.data.dto.CardDTO;
+import com.mk.myspacerest.data.dto.DeckDTO;
 import com.mk.myspacerest.data.entity.Card;
 import com.mk.myspacerest.service.CardService;
 import lombok.RequiredArgsConstructor;
@@ -22,9 +23,10 @@ public class CardController {
 
     private final Logger logger = LoggerFactory.getLogger(CardController.class);
 
-    @GetMapping("/cards")
-    public ResponseEntity<List<CardDTO>> getCards() {
-        var cards = cardService.getCards();
+    @GetMapping("/decks")
+    public ResponseEntity<List<DeckDTO>> getDecks(Principal principal) {
+        String username = principal.getName();
+        var cards = cardService.getDecksByUser(username);
         return ResponseEntity.ok(cards);
     }
 
