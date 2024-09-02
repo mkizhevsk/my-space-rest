@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -89,21 +90,18 @@ public class CardService {
         var deckDTOsForMobile = new ArrayList<DeckDTO>();
 
         for (var mobileDeckDTO : mobileDeckDTOs) {
-            // process deck
             processMobileDeckDTO(mobileDeckDTO, username);
 
-            // process cards in the deck
             var cards = getCardsForMobile(mobileDeckDTO.getCards());
 
-            //
             var deckForMobile = getDeckByInternalCode(mobileDeckDTO.getInternalCode());
             deckForMobile.setCards(cards);
+
             var deckDTOForMobile = deckMapper.toDeckDTO(deckForMobile);
             deckDTOsForMobile.add(deckDTOForMobile);
         }
 
-        // find decks not present in mobile and add it to result
-
+        addNewWebDecks(mobileDeckDTOs, deckDTOsForMobile, username);
 
         return deckDTOsForMobile;
     }
@@ -152,20 +150,19 @@ public class CardService {
         return cardsForMobile;
     }
 
+    private void addNewWebDecks(List<DeckDTO> mobileDeckDTOs, List<DeckDTO> deckDTOsForMobile, String username) {
+        // Get all web decks for the user
+        var webDeckDTOs = getDeckDTOsByUser(username);
 
+        // Find decks not present in mobileDeckDTOs
+        var mobileDeckInternalCodes = mobileDeckDTOs.stream()
+                .map(DeckDTO::getInternalCode)
+                .collect(Collectors.toSet());
 
-//    private List<CardDTO> getCardsForMobile(List<CardDTO> mobileCardDTOs) {
-//
-//        var receivedInternalCodes = mobileCardDTOs.stream()
-//                .map(CardDTO::getInternalCode)
-//                .collect(Collectors.toSet());
-//
-//        var allCards = getAllCards();
-//        var allCardDTOs = cardMapper.toCardDTOs(allCards);
-//
-//        return allCardDTOs.stream()
-//                .filter(cardDTO -> !receivedInternalCodes.contains(cardDTO.getInternalCode()) || cardDTO.isDeleted())
-//                .collect(Collectors.toList());
-//    }
-
+        for (var webDeckDTO : webDeckDTOs) {
+            if (!mobileDeckInternalCodes.contains(webDeckDTO.getInternalCode())) {
+                deckDTOsForMobile.add(webDeckDTO);
+            }
+        }
+    }
 }
