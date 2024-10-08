@@ -1,6 +1,7 @@
 package com.mk.myspacerest.controller;
 
 import com.mk.myspacerest.data.dto.CardDTO;
+import com.mk.myspacerest.data.dto.DeckDTO;
 import com.mk.myspacerest.data.entity.Card;
 import com.mk.myspacerest.service.CardService;
 import lombok.RequiredArgsConstructor;
@@ -22,10 +23,21 @@ public class CardController {
 
     private final Logger logger = LoggerFactory.getLogger(CardController.class);
 
-    @GetMapping("/cards")
-    public ResponseEntity<List<CardDTO>> getCards() {
-        var cards = cardService.getCards();
+    @GetMapping("/decks")
+    public ResponseEntity<List<DeckDTO>> getDecks(Principal principal) {
+        String username = principal.getName();
+        var cards = cardService.getDeckDTOsByUser(username);
         return ResponseEntity.ok(cards);
+    }
+
+    @PostMapping("/decks/sync")
+    public ResponseEntity<List<DeckDTO>> syncDecks(@RequestBody List<DeckDTO> deckDTOs, Principal principal) {
+        logger.info("Start - syncDecks");
+        deckDTOs.forEach(System.out::println);
+        var syncedDecks = cardService.syncCards(deckDTOs, principal.getName());
+        syncedDecks.forEach(System.out::println);
+        logger.info("End - syncCards: {}", syncedDecks.size());
+        return ResponseEntity.ok(syncedDecks);
     }
 
     @GetMapping("/cards/{cardId}")
@@ -54,12 +66,5 @@ public class CardController {
         }
     }
 
-    @PostMapping("/cards/sync")
-    public ResponseEntity<List<CardDTO>> syncCards(@RequestBody List<CardDTO> cardDTOs) {
-        logger.info("Start - syncCards");
-        cardDTOs.forEach(System.out::println);
-        var syncedCards = cardService.syncCards(cardDTOs);
-        logger.info("End - syncCards: {}", syncedCards);
-        return ResponseEntity.ok(syncedCards);
-    }
+
 }
