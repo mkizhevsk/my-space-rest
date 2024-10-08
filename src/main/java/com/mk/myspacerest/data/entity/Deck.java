@@ -51,7 +51,20 @@ public class Deck {
     /**
      * Карты
      */
-    @OneToMany(fetch= FetchType.LAZY, cascade= CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch= FetchType.LAZY, cascade= CascadeType.ALL)
     @JoinColumn(name="deck_id")
     private List<Card> cards;
+
+    @Override
+    public String toString() {
+        return "Deck{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", internalCode='" + internalCode + '\'' +
+                ", editDateTime=" + editDateTime +
+                ", user=" + user +
+                ", deleted=" + deleted +
+                ", cards=" + cards.size() +
+                '}';
+    }
 }

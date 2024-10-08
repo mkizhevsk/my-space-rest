@@ -33,9 +33,7 @@ public class CardController {
     @PostMapping("/decks/sync")
     public ResponseEntity<List<DeckDTO>> syncDecks(@RequestBody List<DeckDTO> deckDTOs, Principal principal) {
         logger.info("Start - syncDecks");
-        deckDTOs.forEach(System.out::println);
-        var syncedDecks = cardService.syncCards(deckDTOs, principal.getName());
-        syncedDecks.forEach(System.out::println);
+        var syncedDecks = cardService.syncDecks(deckDTOs, principal.getName());
         logger.info("End - syncCards: {}", syncedDecks.size());
         return ResponseEntity.ok(syncedDecks);
     }

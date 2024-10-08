@@ -79,10 +79,10 @@ public class CardService {
         return cardRepository.findById(cardId).orElse(null);
     }
 
-    public List<DeckDTO> syncCards(List<DeckDTO> mobileDeckDTOs, String username) {
-        logger.info("syncCards - start: mobileDeckDTOs = {}, userName = {}", mobileDeckDTOs.size(), username);
+    public List<DeckDTO> syncDecks(List<DeckDTO> mobileDeckDTOs, String username) {
+        logger.info("syncDecks - start: mobileDeckDTOs = {}, userName = {}", mobileDeckDTOs.size(), username);
         var deckDTOsForMobile = getDecksForMobile(mobileDeckDTOs, username);
-        logger.info("syncCards - end: deckDTOsForMobile = {}", deckDTOsForMobile.size());
+        logger.info("syncDecks - end: deckDTOsForMobile = {}", deckDTOsForMobile.size());
         return deckDTOsForMobile;
     }
 
