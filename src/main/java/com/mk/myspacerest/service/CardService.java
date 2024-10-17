@@ -34,6 +34,7 @@ public class CardService {
 
     private final Logger logger = LoggerFactory.getLogger(CardService.class);
 
+    // Decks
     public List<DeckDTO> getDeckDTOsByUser(String username) {
         var decks = deckRepository.getDecksByUser(username);
         return deckMapper.toDeckDTOs(decks);
@@ -47,6 +48,99 @@ public class CardService {
         return deckRepository.getByInternalCode(internalCode);
     }
 
+    public List<DeckDTO> syncDecks(List<DeckDTO> mobileDeckDTOs, String username) {
+        logger.info("syncDecks - start: mobileDeckDTOs = {}, userName = {}", mobileDeckDTOs.size(), username);
+        var deckDTOsForMobile = getDecksForMobile(mobileDeckDTOs, username);
+        logger.info("syncDecks - end: deckDTOsForMobile = {}", deckDTOsForMobile.size());
+        return deckDTOsForMobile;
+    }
+
+    private List<DeckDTO> getDecksForMobile(List<DeckDTO> mobileDeckDTOs, String username) {
+        var deckDTOsForMobile = new ArrayList<DeckDTO>();
+        mobileDeckDTOs.forEach(it -> System.out.println(it));
+
+        for (var mobileDeckDTO : mobileDeckDTOs) {
+            processMobileDeckDTO(mobileDeckDTO, username);
+
+            var cards = getCardsForMobile(mobileDeckDTO.getCards());
+
+            var deckForMobile = getDeckByInternalCode(mobileDeckDTO.getInternalCode());
+            deckForMobile.setCards(cards);
+
+            var deckDTOForMobile = deckMapper.toDeckDTO(deckForMobile);
+            deckDTOsForMobile.add(deckDTOForMobile);
+        }
+
+        addNewWebDecks(mobileDeckDTOs, deckDTOsForMobile, username);
+
+        return deckDTOsForMobile;
+    }
+
+    private void processMobileDeckDTO(DeckDTO mobileDeckDTO, String username) {
+        System.out.println(mobileDeckDTO.getName());
+        var webDeck = deckRepository.findByInternalCode(mobileDeckDTO.getInternalCode());
+        if (webDeck.isPresent()) {
+            System.out.println("here1 ");
+            var deck = webDeck.get();
+            var deckDTOEditDateTime = DateUtils.parseStringToLocalDateTime(mobileDeckDTO.getEditDateTime());
+
+            if (deckDTOEditDateTime.isAfter(deck.getEditDateTime())) {
+                deckMapper.updateDeck(mobileDeckDTO, deck);
+                deckRepository.save(deck);
+            }
+        } else {
+            System.out.println("here2 ");
+            var newDeck = deckMapper.toDeck(mobileDeckDTO);
+            var user = userRepository.getUserByUsername(username);
+            newDeck.setUser(user);
+            deckRepository.save(newDeck);
+            logger.info("new deck was created, id " + newDeck.getId());
+        }
+    }
+
+    private void addNewWebDecks(List<DeckDTO> mobileDeckDTOs, List<DeckDTO> deckDTOsForMobile, String username) {
+        // Get all web decks for the user
+        var webDeckDTOs = getDeckDTOsByUser(username);
+
+        // Find decks not present in mobileDeckDTOs
+        var mobileDeckInternalCodes = mobileDeckDTOs.stream()
+                .map(DeckDTO::getInternalCode)
+                .collect(Collectors.toSet());
+
+        for (var webDeckDTO : webDeckDTOs) {
+            if (!mobileDeckInternalCodes.contains(webDeckDTO.getInternalCode())) {
+                deckDTOsForMobile.add(webDeckDTO);
+            }
+        }
+    }
+
+    public DeckDTO createDeck(DeckDTO deckDTO, String username) {
+        var user = userRepository.getUserByUsername(username);
+        var newDeck = deckMapper.toDeck(deckDTO);
+        newDeck.setUser(user);
+        var savedDeck = deckRepository.save(newDeck);
+        logger.info("deck with id " + savedDeck + " was created");
+
+        return deckMapper.toDeckDTO(savedDeck);
+    }
+
+    public DeckDTO updateDeck(DeckDTO deckDTO, String username) {
+        var existingDeck = deckRepository.findByInternalCode(deckDTO.getInternalCode())
+                .orElseThrow(() -> new RuntimeException("Deck not found"));
+
+        var deckDTOEditDateTime = DateUtils.parseStringToLocalDateTime(deckDTO.getEditDateTime());
+
+        if (deckDTOEditDateTime.isAfter(existingDeck.getEditDateTime())) {
+            deckMapper.updateDeck(deckDTO, existingDeck);
+            var savedDeck = deckRepository.save(existingDeck);
+            logger.info("deck with id " + savedDeck + " was updated");
+
+            return deckMapper.toDeckDTO(savedDeck);
+        }
+        throw new RuntimeException("Deck update failed: newer version exists");
+    }
+
+    // Cards
     public List<CardDTO> getCards() {
         var cards = (List<Card>) cardRepository.findAll();
         return cardMapper.toCardDTOs(cards);
@@ -79,50 +173,7 @@ public class CardService {
         return cardRepository.findById(cardId).orElse(null);
     }
 
-    public List<DeckDTO> syncDecks(List<DeckDTO> mobileDeckDTOs, String username) {
-        logger.info("syncDecks - start: mobileDeckDTOs = {}, userName = {}", mobileDeckDTOs.size(), username);
-        var deckDTOsForMobile = getDecksForMobile(mobileDeckDTOs, username);
-        logger.info("syncDecks - end: deckDTOsForMobile = {}", deckDTOsForMobile.size());
-        return deckDTOsForMobile;
-    }
 
-    private List<DeckDTO> getDecksForMobile(List<DeckDTO> mobileDeckDTOs, String username) {
-        var deckDTOsForMobile = new ArrayList<DeckDTO>();
-
-        for (var mobileDeckDTO : mobileDeckDTOs) {
-            processMobileDeckDTO(mobileDeckDTO, username);
-
-            var cards = getCardsForMobile(mobileDeckDTO.getCards());
-
-            var deckForMobile = getDeckByInternalCode(mobileDeckDTO.getInternalCode());
-            deckForMobile.setCards(cards);
-
-            var deckDTOForMobile = deckMapper.toDeckDTO(deckForMobile);
-            deckDTOsForMobile.add(deckDTOForMobile);
-        }
-
-        addNewWebDecks(mobileDeckDTOs, deckDTOsForMobile, username);
-
-        return deckDTOsForMobile;
-    }
-
-    private void processMobileDeckDTO(DeckDTO mobileDeckDTO, String username) {
-        var webDeck = deckRepository.findByInternalCode(mobileDeckDTO.getInternalCode());
-        if (webDeck.isPresent()) {
-            var deck = webDeck.get();
-            var deckDTOEditDateTime = DateUtils.parseStringToLocalDateTime(mobileDeckDTO.getEditDateTime());
-
-            if (deckDTOEditDateTime.isAfter(deck.getEditDateTime())) {
-                deckMapper.updateDeck(mobileDeckDTO, deck);
-                deckRepository.save(deck);
-            }
-        } else {
-            var newDeck = deckMapper.toDeck(mobileDeckDTO);
-            var user = userRepository.getUserByUsername(username);
-            newDeck.setUser(user);
-            deckRepository.save(newDeck);
-        }
-    }
 
     private List<Card> getCardsForMobile(List<CardDTO> mobileCardDTOS) {
         var cardsForMobile = new ArrayList<Card>();
@@ -148,21 +199,5 @@ public class CardService {
         }
 
         return cardsForMobile;
-    }
-
-    private void addNewWebDecks(List<DeckDTO> mobileDeckDTOs, List<DeckDTO> deckDTOsForMobile, String username) {
-        // Get all web decks for the user
-        var webDeckDTOs = getDeckDTOsByUser(username);
-
-        // Find decks not present in mobileDeckDTOs
-        var mobileDeckInternalCodes = mobileDeckDTOs.stream()
-                .map(DeckDTO::getInternalCode)
-                .collect(Collectors.toSet());
-
-        for (var webDeckDTO : webDeckDTOs) {
-            if (!mobileDeckInternalCodes.contains(webDeckDTO.getInternalCode())) {
-                deckDTOsForMobile.add(webDeckDTO);
-            }
-        }
     }
 }

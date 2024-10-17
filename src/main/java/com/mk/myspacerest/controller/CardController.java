@@ -38,6 +38,22 @@ public class CardController {
         return ResponseEntity.ok(syncedDecks);
     }
 
+    @PostMapping("/decks")
+    public ResponseEntity<DeckDTO> createDeck(@RequestBody DeckDTO deckDTO, Principal principal) {
+        logger.info("Start - createDeck");
+        var newDeck = cardService.createDeck(deckDTO, principal.getName());
+        logger.info("End - createDeck: {}", newDeck.getInternalCode());
+        return ResponseEntity.ok(newDeck);
+    }
+
+    @PutMapping("/decks")
+    public ResponseEntity<DeckDTO> updateDeck(@RequestBody DeckDTO deckDTO, Principal principal) {
+        logger.info("Start - updateDeck");
+        var updatedDeck = cardService.updateDeck(deckDTO, principal.getName());
+        logger.info("End - updateDeck: {}", updatedDeck.getInternalCode());
+        return ResponseEntity.ok(updatedDeck);
+    }
+
     @GetMapping("/cards/{cardId}")
     public Card getCard(@PathVariable int cardId, Principal principal) {
         logger.debug("Start - getCard: cardId = {}, principal = {} ", cardId, principal);
