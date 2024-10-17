@@ -40,17 +40,17 @@ public class CardController {
 
     @PostMapping("/decks")
     public ResponseEntity<DeckDTO> createDeck(@RequestBody DeckDTO deckDTO, Principal principal) {
-        logger.info("Start - createDeck");
+        logger.info("Start - createDeck: deckDTO = {}", deckDTO);
         var newDeck = cardService.createDeck(deckDTO, principal.getName());
-        logger.info("End - createDeck: {}", newDeck.getInternalCode());
+        logger.info("End - createDeck: {}", newDeck.getName());
         return ResponseEntity.ok(newDeck);
     }
 
     @PutMapping("/decks")
     public ResponseEntity<DeckDTO> updateDeck(@RequestBody DeckDTO deckDTO, Principal principal) {
-        logger.info("Start - updateDeck");
+        logger.info("Start - updateDeck: deckDTO = {}", deckDTO);
         var updatedDeck = cardService.updateDeck(deckDTO, principal.getName());
-        logger.info("End - updateDeck: {}", updatedDeck.getInternalCode());
+        logger.info("End - updateDeck: {}", updatedDeck.getName());
         return ResponseEntity.ok(updatedDeck);
     }
 
