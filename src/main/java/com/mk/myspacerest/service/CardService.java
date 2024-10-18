@@ -124,20 +124,19 @@ public class CardService {
         return deckMapper.toDeckDTO(savedDeck);
     }
 
-    public DeckDTO updateDeck(DeckDTO deckDTO, String username) {
+    public DeckDTO updateDeck(DeckDTO deckDTO) {
         var existingDeck = deckRepository.findByInternalCode(deckDTO.getInternalCode())
                 .orElseThrow(() -> new RuntimeException("Deck not found"));
-
         var deckDTOEditDateTime = DateUtils.parseStringToLocalDateTime(deckDTO.getEditDateTime());
-
         if (deckDTOEditDateTime.isAfter(existingDeck.getEditDateTime())) {
             deckMapper.updateDeck(deckDTO, existingDeck);
             var savedDeck = deckRepository.save(existingDeck);
             logger.info("deck with id " + savedDeck + " was updated");
 
             return deckMapper.toDeckDTO(savedDeck);
+        } else {
+            return deckMapper.toDeckDTO(existingDeck);
         }
-        throw new RuntimeException("Deck update failed: newer version exists");
     }
 
     // Cards
