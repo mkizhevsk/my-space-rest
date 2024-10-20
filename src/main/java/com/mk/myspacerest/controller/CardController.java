@@ -47,7 +47,7 @@ public class CardController {
     }
 
     @PutMapping("/decks")
-    public ResponseEntity<DeckDTO> updateDeck(@RequestBody DeckDTO deckDTO, Principal principal) {
+    public ResponseEntity<DeckDTO> updateDeck(@RequestBody DeckDTO deckDTO) {
         logger.info("Start - updateDeck: deckDTO = {}", deckDTO);
         var updatedDeck = cardService.updateDeck(deckDTO);
         logger.info("End - updateDeck: {}", updatedDeck.getName());
