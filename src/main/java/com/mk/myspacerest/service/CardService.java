@@ -80,21 +80,14 @@ public class CardService {
         System.out.println(mobileDeckDTO.getName());
         var webDeck = deckRepository.findByInternalCode(mobileDeckDTO.getInternalCode());
         if (webDeck.isPresent()) {
-            System.out.println("here1 ");
             var deck = webDeck.get();
-            var deckDTOEditDateTime = DateUtils.parseStringToLocalDateTime(mobileDeckDTO.getEditDateTime());
+            var mobileDeckDTOEditDateTime = DateUtils.parseStringToLocalDateTime(mobileDeckDTO.getEditDateTime());
 
-            if (deckDTOEditDateTime.isAfter(deck.getEditDateTime())) {
-                deckMapper.updateDeck(mobileDeckDTO, deck);
-                deckRepository.save(deck);
+            if (mobileDeckDTOEditDateTime.isAfter(deck.getEditDateTime())) {
+                saveUpdatedDeck(mobileDeckDTO, deck);
             }
         } else {
-            System.out.println("here2 ");
-            var newDeck = deckMapper.toDeck(mobileDeckDTO);
-            var user = userRepository.getUserByUsername(username);
-            newDeck.setUser(user);
-            deckRepository.save(newDeck);
-            logger.info("new deck was created, id " + newDeck.getId());
+            saveCreatedDeck(mobileDeckDTO, username);
         }
     }
 
@@ -114,29 +107,36 @@ public class CardService {
         }
     }
 
-    public DeckDTO createDeck(DeckDTO deckDTO, String username) {
-        var user = userRepository.getUserByUsername(username);
-        var newDeck = deckMapper.toDeck(deckDTO);
-        newDeck.setUser(user);
-        var savedDeck = deckRepository.save(newDeck);
-        logger.info("deck with id " + savedDeck + " was created");
+    private void saveUpdatedDeck(DeckDTO deckDTO, Deck deck) {
+        deckMapper.updateDeck(deckDTO, deck);
+        deckRepository.save(deck);
+        logger.info("deck " + deck.getName() + " was updated: " + deck.getEditDateTime());
+    }
 
-        return deckMapper.toDeckDTO(savedDeck);
+    private Deck saveCreatedDeck(DeckDTO deckDTO, String username) {
+        var user = userRepository.getUserByUsername(username);
+        var deck = deckMapper.toDeck(deckDTO);
+        deck.setUser(user);
+        deckRepository.save(deck);
+        logger.info("deck " + deck.getName() + " was created: " + deck.getEditDateTime());
+        return deck;
+    }
+
+    public DeckDTO createDeck(DeckDTO deckDTO, String username) {
+        Deck deck = saveCreatedDeck(deckDTO, username);
+        return deckMapper.toDeckDTO(deck);
     }
 
     public DeckDTO updateDeck(DeckDTO deckDTO) {
         var existingDeck = deckRepository.findByInternalCode(deckDTO.getInternalCode())
                 .orElseThrow(() -> new RuntimeException("Deck not found"));
+
         var deckDTOEditDateTime = DateUtils.parseStringToLocalDateTime(deckDTO.getEditDateTime());
         if (deckDTOEditDateTime.isAfter(existingDeck.getEditDateTime())) {
-            deckMapper.updateDeck(deckDTO, existingDeck);
-            var savedDeck = deckRepository.save(existingDeck);
-            logger.info("deck with id " + savedDeck + " was updated");
-
-            return deckMapper.toDeckDTO(savedDeck);
-        } else {
-            return deckMapper.toDeckDTO(existingDeck);
+            saveUpdatedDeck(deckDTO, existingDeck);
         }
+
+        return deckMapper.toDeckDTO(existingDeck);
     }
 
     // Cards
@@ -167,12 +167,9 @@ public class CardService {
         return null;
     }
 
-
     public Card getCard(int cardId) {
         return cardRepository.findById(cardId).orElse(null);
     }
-
-
 
     private List<Card> getCardsForMobile(List<CardDTO> mobileCardDTOS) {
         var cardsForMobile = new ArrayList<Card>();
